@@ -1,12 +1,14 @@
-# k8s-kafka-flink
-This is a one stop shop on how to set up Apache Flink with a Apache Kafka connector in Kubernetes. The goal with this tutorial is to push an event to Kafka, process it in Flink and push the processed event back to Kafka on a separate topic.
+# One stop shop: Kubernetes + Kafka + Flink
+This is a hands on tutorial on how to set up Apache Flink with a Apache Kafka connector in Kubernetes. The goal with this tutorial is to push an event to Kafka, process it in Flink and push the processed event back to Kafka on a separate topic. This guide will not dig deep into any of the tools, there are a lot of existing resources about Kubernetes, Kafka and Flink that are great. Focus here is just to get it up and running!
+
+This is what we are going to do:
 
 1. Deploy Kafka and Flink to Kubernetes
 2. Deploy job to Flink
 3. Generate some data
 
 ## MicroK8s
-In these examples [MicroK8s](https://microk8s.io/) has been used. Follow their [doc](https://microk8s.io/docs) to set it up.
+In these examples [MicroK8s](https://microk8s.io/) have been used. Follow their [doc](https://microk8s.io/docs) to set it up.
 
 Do not forget to enable some required extensions:
 
@@ -27,19 +29,21 @@ To run Kafka on Kubernetes [Strimzi](https://strimzi.io) is used in this setup. 
 
 This is done in two steps:
 1. Install Strimzi
-2. Provision the kafka cluster
+2. Provision the Kafka cluster
 
-First, move into the `k8s` dir:
+First, move into the `k8s` directory:
 ```
 cd k8s
 ```
 
+Easy!
+
 #### Install Strimzi
 
 
-Create Kafka namespace:
+Create the Kafka namespace:
 ```
-kubectl create ns kafka
+kubectl create namespace kafka
 ```
 
 Create Strimzi cluster operator:
@@ -68,7 +72,7 @@ kubectl get pods --namespace kafka -w
 
 #### Verify the Kafka setup
 
-For this particular experiment I wanted to explore how to connect to the Kafka cluster from the outside. To do that a `NodePort` was setup in the `kafka-persistent-single.yml`. Strimzi has a good blog post about [Accessing Kafka](https://strimzi.io/blog/2019/04/17/accessing-kafka-part-1/).
+For this particular experiment I wanted to explore how to connect to the Kafka cluster from the outside. To do that a `NodePort` was setup in the `kafka-persistent-single.yml`. Strimzi has a good blog post about [Accessing Kafka](https://strimzi.io/blog/2019/04/17/accessing-kafka-part-1/) if you are interested.
 
 First, get your Kubernetes node `Name`:
 ```
@@ -86,15 +90,13 @@ Fetch the port of your Kafka external bootstrap service:
 kubectl get service my-cluster-kafka-external-bootstrap -o=jsonpath='{.spec.ports[0].nodePort}{"\n"}'\n -n kafka
 ```
 
-It is also possible to just call `kubectl get po -n kafka` and manually get the 
-
 By now you should have:
 - Your Kubernetes node ip adress
 - The port of the Kafka bootstrap service
 
-If you have the Kafka CLI installed locally already its good. Otherwise, [download it](https://kafka.apache.org/quickstart#quickstart_download), follow the download step only.
+If you dont already have the Kafka CLI available you have to [download it](https://kafka.apache.org/quickstart#quickstart_download), it is sufficient to follow the download step only.
 
-Finally, we can do the actual validation by producing / consuming some messages. Open two terminal windows, and browse to your kafka installation folder.
+Finally, we can do the actual validation by producing / consuming some messages. Open two terminal windows, and browse to your Kafka installation folder.
 
 In terminal 1, we will consume messages:
 ```
@@ -102,13 +104,13 @@ In terminal 1, we will consume messages:
 bin/kafka-console-consumer.sh --bootstrap-server <node-ip>:<bootstrap-port> --topic my-topic --from-beginning
 ```
 
-In terminal 2, we produce messages:
+In terminal 2, we produce the messages:
 ```
 # set the <node-ip> and <bootstrap-port>
 bin/kafka-console-producer.sh --broker-list <node-ip>:<bootstrap-port> --topic my-topic
 ```
 
-Post some messages in terminal 2, and they should pop up in terminal 1. GG!
+Post some messages in terminal 2, and they should pop up in terminal 1. Very smooth.
 
 
 ## Deploy Apache Flink to Kubernetes
@@ -119,7 +121,7 @@ Again, browse to the `k8s` directory of the repo.
 
 Create the Flink namespace:
 ```
-kubectl create ns flink
+kubectl create namespace flink
 ```
 
 Deploy the `flink.yml` to the Kubernetes cluster:
@@ -150,6 +152,7 @@ The job that will be deployed to Flink is a simple example Flink application. Wh
 For the job in this project the [Project Template for Scala](https://ci.apache.org/projects/flink/flink-docs-release-1.10/dev/projectsetup/scala_api_quickstart.html) was used. I had to do some minor modifications to comply with my local SBT and Scala setup. You will have to install both SBT and Scala. These are the versions that are used in this project:
 - SBT version 1.3.12
 - Scala version 2.12.11
+- OpenJDK 13
 
 Head over to the `flink-job` directory in one of your terminals.
 Then build a JAR file, simply run:
@@ -157,9 +160,11 @@ Then build a JAR file, simply run:
 sbt assembly
 ```
 
-When the assembly is complete you should have a fresh jar in `target/scala-2.12/flink-job-assembly-0.1-SNAPSHOT.jar`.
+If you are lucky it will just work. If not, you might have to some troubleshooting... Make sure you are using the same versions.
 
-Next step is to submit the job to Flink. You can either do this throug the Flink UI through the "Submit New Job" menu option. But I will do it using the Flink CLI.
+When the assembly is complete you should have a fresh `jar` in `target/scala-2.12/flink-job-assembly-0.1-SNAPSHOT.jar`.
+
+Next step is to submit the job to Flink. You can either do this through the Flink UI using the "Submit New Job" menu option. But I will show how to use the Flink CLI since that is more useful in the long run.
 For this tutorial download the "Apache Flink 1.10.1 for Scala 2.12" from [here](https://flink.apache.org/downloads.html).
 
 Unzip the package:
@@ -168,7 +173,7 @@ tar xzf flink-1.10.1-bin-scala_2.12.tgz
 cd flink-1.10.1
 ```
 
-Get the Flink kubernetes node port:
+Get the Flink kubernetes `NodePort`:
 ```
 kubectl get service flink-jobmanager-rest -o=jsonpath='{.spec.ports[0].nodePort}{"\n"}'\n -n flink
 ```
@@ -187,7 +192,7 @@ bin/flink run -m <node-ip>:<flink-port> \
     --group.id flink
 ```
 
-Basically the arguments to the Flink job are pretty self-descriptive.
+The arguments to the Flink job are pretty self-descriptive.
 
 Head over to the Flink UI and list "Running Jobs". You should see a task in "Running" state. If you got this far you should be ready to process data!
 
@@ -209,6 +214,7 @@ bin/kafka-console-producer.sh --broker-list <node-ip>:<bootstrap-port> --topic i
 ```
 
 When you produce message (just type anything into the Kafka producer prompt) you will see that event is pushed to the output topic with an additional prefix.
+
 ## Troubleshooting
 
 In Kubernetes you can look at the logs for any pod:
@@ -222,3 +228,7 @@ kubectl get logs <pod-name> --namespace kafka
 ```
 
 Flink logs are also available through the UI. Browse to the "Task Managers" or "Job Manager" and click the "Logs" tab.
+
+## Done!
+
+Now you have a nice stream processing base line. Now it is up to you to do something with it, you can start out by making some changes to the Flink Job. Just go nuts in [flink-job/src/main/scala/dev/chrisp/Job.scala](https://github.com/pwgn/k8s-kafka-flink/blob/master/flink-job/src/main/scala/dev/chrisp/Job.scala).
