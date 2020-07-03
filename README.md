@@ -1,6 +1,8 @@
 # One stop shop: Kubernetes + Kafka + Flink
 This is a hands-on tutorial on how to set up Apache Flink with Apache Kafka connector in Kubernetes. The goal with this tutorial is to push an event to Kafka, process it in Flink, and push the processed event back to Kafka on a separate topic. This guide will not dig deep into any of the tools as there exists a lot of great resources about those topics. Focus here is just to get it up and running!
 
+You can follow along by cloning this [git repo](https://github.com/pwgn/k8s-kafka-flink)
+
 This is what we are going to do:
 
 1. Deploy Kafka and Flink to Kubernetes
