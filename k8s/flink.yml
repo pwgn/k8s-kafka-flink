@@ -44,7 +44,7 @@ spec:
     spec:
       containers:
       - name: jobmanager
-        image: flink:latest
+        image: flink:1.10.1
         workingDir: /opt/flink
         command: ["/bin/bash", "-c", "$FLINK_HOME/bin/jobmanager.sh start;\
           while :;
@@ -98,7 +98,7 @@ spec:
     spec:
       containers:
       - name: taskmanager
-        image: flink:latest
+        image: flink:1.10.1
         workingDir: /opt/flink
         command: ["/bin/bash", "-c", "$FLINK_HOME/bin/taskmanager.sh start; \
           while :;
